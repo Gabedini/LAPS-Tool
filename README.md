@@ -9,6 +9,7 @@ Known issues:
 * Does not display anything when valid comp ID inputted but no PW to be found.
 * No logic for expired token (hopefully shows in logs?). Should renew if receiving 401 and then throw error if unsuccessful
 * pasting errors, specifically white space will break the URL without an error or correction
+* The main page isn't centered in the window.
 * Not great error handling in general. Broken or incorrect URLS only sort of output an error.
 - One option would be, if there is an error other than bad credentials, to just dump the error into logs and post a message about checking those.
 
