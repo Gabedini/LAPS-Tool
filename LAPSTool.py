@@ -16,7 +16,7 @@ compId = ""
 """This method gets us a bearer token from Jamf Pro."""
 def getToken(url, jpUser, jpPass):
 	try:
-		response = session.post(url + "auth/token", auth = (jpUser, jpPass))
+		response = session.post(url + "/api/v1/auth/token", auth = (jpUser, jpPass))
 		print(response)
 		if response.status_code == 401:
 			logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Tried to get a token: {response} - incorrect username or password.")
@@ -35,7 +35,7 @@ def getComputerID(url, dataForHeader, serialNumber):
 	logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Collecting the computer ID from {serialNumber}")
 	"""because classic API is dumb we need to specify json, so we're doing that below:"""
 	dataForHeader["Accept"] = "application/json"
-	response = session.get(url + f"computers/serialnumber/{serialNumber}", headers=dataForHeader)
+	response = session.get(url + f"/JSSResource/computers/serialnumber/{serialNumber}", headers=dataForHeader)
 	if response.status_code == 401:
 		logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Failed to collect computer ID: {response} - the token may have expired. Please close and reopen app....")
 		return "Token may have expired. Please close and reopen app."
@@ -50,7 +50,9 @@ def getComputerID(url, dataForHeader, serialNumber):
 
 """Grabs the current settings in Jamf Pro"""
 def getCurrentSettings(url, dataForHeader):
-	response = session.get(url + "local-admin-password/settings", headers=dataForHeader)
+	response = session.get(url + "/api/v2/local-admin-password/settings", headers=dataForHeader)
+	print(response)
+	print(response.text)
 	if response.status_code == 401:
 		logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Attempt to collect Current LAPS Settings: {response} - the token may have expired. Please close and reopen app....")
 		return "Token may have expired. Please close and reopen app."
@@ -67,8 +69,9 @@ def getCurrentSettings(url, dataForHeader):
 def getManagementID(url, dataForHeader, computerID):
 	global clientManagementId
 	"""This endpint only appears as computers-inventory in the API GUI"""
-	response = session.get(url + f"computers-inventory-detail/{computerID}", headers=dataForHeader)
+	response = session.get(url + f"/api/v1/computers-inventory-detail/{computerID}", headers=dataForHeader)
 	print(response)
+	print(response.text)
 	if response.status_code == 401:
 		logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Attempt to collect Client Management ID: {response} - the token may have expired. Please close and reopen app....")
 		return "Token may have expired. Please close and reopen app."
@@ -94,7 +97,9 @@ def enableIfDisabled(url, dataForHeader):
 		"""putting the 'current' variables in here, likely would make more sense to update these independently, but this can work as default data for now
 		It won't accept leaving out data points, we need to supply them all, it seems. I'll look to see if we can skip them somehow, later"""
 		jsonToEnable = {"autoDeployEnabled":"true", "passwordRotationTime":currentPasswordRotationTime, "autoExpirationTime":currentAutoExpirationTime}
-		response = session.put(url + "local-admin-password/settings", headers=dataForHeader, json = jsonToEnable)
+		response = session.put(url + "/api/v2/local-admin-password/settings", headers=dataForHeader, json = jsonToEnable)
+		print(response)
+		print(response.text)
 		if response.status_code == 401:
 			logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Attempt to enable LAPS: {response} - the token may have expired. Please close and reopen app....")
 			return "Token may have expired. Please close and reopen app."
@@ -125,7 +130,9 @@ def getViewedHistory(url, dataForHeader, computerID, username):
 			getManagementID(jpURL, head, computerID)
 		if clientManagementId.startswith("Unable") == True:
 			return "Unable to get history, Client ManagementID appears to be incorrect. Most likely this computer ID doesn't exist."
-		response = session.get(url + f"local-admin-password/{clientManagementId}/account/{username}/audit", headers=dataForHeader)
+		response = session.get(url + f"/api/v2/local-admin-password/{clientManagementId}/account/{username}/audit", headers=dataForHeader)
+		print(response)
+		print(response.text)
 		if response.status_code == 401:
 			logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} History collection: {response} - the token may have expired. Please close and reopen app....")
 			return "Token may have expired. Please close and reopen app."
@@ -151,7 +158,10 @@ def getLAPSPassword(url, dataForHeader, computerID, username):
 			getManagementID(jpURL, head, computerID)
 		if clientManagementId.startswith("Unable") == True:
 			return "Unable to get history, Client ManagementID appears to be incorrect. Most likely this computer ID doesn't exist."
-		response = session.get(url + f"local-admin-password/{clientManagementId}/account/{username}/password", headers=dataForHeader)
+		response = session.get(url + f"/api/v2/local-admin-password/{clientManagementId}/account/{username}/password", headers=dataForHeader)
+		print(url + f"/api/v2/local-admin-password/{clientManagementId}/account/{username}/password")
+		print(response)
+		print(response.text)
 		if response.status_code == 401:
 			logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Password collection: {response} - the token may have expired. Please close and reopen app....")
 			return "Token may have expired. Please close and reopen app."
@@ -184,8 +194,8 @@ def getLAPSAccount(url, dataForHeader, computerID):
 			getManagementID(jpURL, head, computerID)
 		if clientManagementId.startswith("Unable") == True:
 			return "Unable to get history, Client ManagementID appears to be incorrect. Most likely this computer ID doesn't exist."
-		response = session.get(url + f"local-admin-password/{clientManagementId}/accounts", headers=dataForHeader)
-		print(f"{url}local-admin-password/{clientManagementId}/accounts")
+		response = session.get(url + f"/api/v2/local-admin-password/{clientManagementId}/accounts", headers=dataForHeader)
+		print(f"{url}/api/v2/local-admin-password/{clientManagementId}/accounts")
 		if response.status_code == 401:
 			logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Account collection: {response} - the token may have expired. Please close and reopen app....")
 			return "Token may have expired. Please close and reopen app."
@@ -275,10 +285,10 @@ class App(customtkinter.CTk):
 
 		"""Gets the computer ID if a serial number is inputted instead of ID"""
 		if self.idTypeSwitch.get()==1:
-			global classicURL
+			global jpURL
 			print("running the computer ID collection")
 			logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Serial Number toggle enabled...running ID collection.")
-			computerID = getComputerID(classicURL, head, self.inputComputerID.get())
+			computerID = getComputerID(jpURL, head, self.inputComputerID.get())
 			print(f"computer ID collected: {computerID}")
 
 		unOutput = getLAPSAccount(jpURL, head, computerID)
@@ -316,15 +326,13 @@ class App(customtkinter.CTk):
 	def userLogin(self):
 		"""anything that might be referenced outside of the GUI button functions is global"""
 		global jpURL
-		global classicURL
 		global head
 		global currentAutoDeployEnabled
 		global currentPasswordRotationTime
 		global currentAutoExpirationTime
 		
 		"""Making some variables."""
-		classicURL = f"{self.inputURL.get()}/JSSResource/"
-		jpURL = f"{self.inputURL.get()}/api/v1/"
+		jpURL = f"{self.inputURL.get()}"
 		username = self.inputUsernm.get()
 		password = self.inputPasswd.get()
 		url = self.inputURL.get()
@@ -381,7 +389,7 @@ class App(customtkinter.CTk):
 		currentPasswordRotationTime = currentSettings["passwordRotationTime"]
 		print(currentPasswordRotationTime)
 		"""Setting means: The length of time Jamf Pro routinely rotates the local admin password — the default is 90 days"""
-		currentAutoExpirationTime = currentSettings["autoExpirationTime"]
+		currentAutoExpirationTime = currentSettings["autoRotateExpirationTime"]
 		print(currentAutoExpirationTime)
 		"""———————————————————————————————————————"""
 
@@ -403,4 +411,4 @@ if __name__ == "__main__":
 
 
 
-#SDG
+# SDG
