@@ -18,3 +18,4 @@ Qol Improvements:
 * Output when the password will update next
 * Looks like my logging errors aren't 100% accurate, malformed URLs and bad credentials complain about a token issue.
 * Split into separate files for more readily reused code.
+* Include new endpoints for setting the password and changing The Jamf Pro Settings.
