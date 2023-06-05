@@ -46,13 +46,11 @@ def getComputerID(url, dataForHeader, serialNumber):
 		return computerID
 	else:
 		logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} ")
-		return "Something went wrong, please check that this serial exists in your Jamf Pro instance."
+		return "Failed to collect computer ID, please check that this serial number exists in your Jamf Pro instance."
 
 """Grabs the current settings in Jamf Pro"""
 def getCurrentSettings(url, dataForHeader):
 	response = session.get(url + "/api/v2/local-admin-password/settings", headers=dataForHeader)
-	print(response)
-	print(response.text)
 	if response.status_code == 401:
 		logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Attempt to collect Current LAPS Settings: {response} - the token may have expired. Please close and reopen app....")
 		return "Token may have expired. Please close and reopen app."
@@ -70,8 +68,6 @@ def getManagementID(url, dataForHeader, computerID):
 	global clientManagementId
 	"""This endpint only appears as computers-inventory in the API GUI"""
 	response = session.get(url + f"/api/v1/computers-inventory-detail/{computerID}", headers=dataForHeader)
-	print(response)
-	print(response.text)
 	if response.status_code == 401:
 		logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Attempt to collect Client Management ID: {response} - the token may have expired. Please close and reopen app....")
 		return "Token may have expired. Please close and reopen app."
@@ -98,8 +94,6 @@ def enableIfDisabled(url, dataForHeader):
 		It won't accept leaving out data points, we need to supply them all, it seems. I'll look to see if we can skip them somehow, later"""
 		jsonToEnable = {"autoDeployEnabled":"true", "passwordRotationTime":currentPasswordRotationTime, "autoExpirationTime":currentAutoExpirationTime}
 		response = session.put(url + "/api/v2/local-admin-password/settings", headers=dataForHeader, json = jsonToEnable)
-		print(response)
-		print(response.text)
 		if response.status_code == 401:
 			logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Attempt to enable LAPS: {response} - the token may have expired. Please close and reopen app....")
 			return "Token may have expired. Please close and reopen app."
@@ -111,7 +105,7 @@ def enableIfDisabled(url, dataForHeader):
 			return content
 		else:
 			logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} If this option errors out it likely means it was a connection error. Closing and re-opening should clear that up.")
-			return "Something went wrong, please ensure your Jamf Pro version is greater than 10.45."
+			return "Failed to enable LAPS For Jamf Pro. Please ensure your Jamf Pro version is greater than 10.45."
 	else:
 		logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} LAPS already enabled, skipping...")
 		return "LAPS already enabled, skipping"
@@ -129,7 +123,7 @@ def getViewedHistory(url, dataForHeader, computerID, username):
 			logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Missing Client Management ID, collecting...")
 			getManagementID(jpURL, head, computerID)
 		if clientManagementId.startswith("Unable") == True:
-			return "Unable to get history, Client ManagementID appears to be incorrect. Most likely this computer ID doesn't exist."
+			return "Unable to get history. Client ManagementID appears to be incorrect. Most likely this computer ID doesn't exist or this computer does not have a LAPS account."
 		response = session.get(url + f"/api/v2/local-admin-password/{clientManagementId}/account/{username}/audit", headers=dataForHeader)
 		print(response)
 		print(response.text)
@@ -143,8 +137,8 @@ def getViewedHistory(url, dataForHeader, computerID, username):
 			prettyHistory = json.dumps(history, indent=4)
 			return prettyHistory
 		else:
-			logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Something went wrong. It may be that the computerID or local admin account supplied were unrecognized by the server, or that simply your Jamf Pro does not support this endpoint")
-			return "Something went wrong, please ensure your Jamf Pro version is greater than 10.45 and that this computer is configured for this workflow."
+			logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Unable to collect LAPS history. It may be that the computerID or local admin account supplied were unrecognized by the server, or that simply your Jamf Pro does not support this endpoint")
+			return "Unable to collect LAPS history. Please ensure this computer is configured for this workflow and that your Jamf Pro version is greater than 10.46."
 
 """Get current LAPS password for specified username on a client. (returns just the password)"""
 def getLAPSPassword(url, dataForHeader, computerID, username):
@@ -157,11 +151,9 @@ def getLAPSPassword(url, dataForHeader, computerID, username):
 			logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Missing Client Management ID, collecting...")
 			getManagementID(jpURL, head, computerID)
 		if clientManagementId.startswith("Unable") == True:
-			return "Unable to get history, Client ManagementID appears to be incorrect. Most likely this computer ID doesn't exist."
+			return "Unable to collect LAPS Password. Client ManagementID appears to be incorrect. Most likely this computer ID doesn't exist."
 		response = session.get(url + f"/api/v2/local-admin-password/{clientManagementId}/account/{username}/password", headers=dataForHeader)
 		print(url + f"/api/v2/local-admin-password/{clientManagementId}/account/{username}/password")
-		print(response)
-		print(response.text)
 		if response.status_code == 401:
 			logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Password collection: {response} - the token may have expired. Please close and reopen app....")
 			return "Token may have expired. Please close and reopen app."
@@ -171,8 +163,8 @@ def getLAPSPassword(url, dataForHeader, computerID, username):
 			lapsPass = content["password"]
 			return lapsPass
 		else:
-			logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Something went wrong. It may be that the computerID or local admin account supplied were unrecognized by the server, or that simply your Jamf Pro does not support this endpoint")
-			return "Something went wrong, please ensure your Jamf Pro version is greater than 10.45."
+			logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Unable to collect LAPS Password. It may be that the computerID or local admin account supplied were unrecognized by the server, or that simply your Jamf Pro does not support this endpoint")
+			return "Unable to collect LAPS Password. Please ensure your Jamf Pro version is greater than 10.45."
 
 """Get the LAPS capable admin accounts for a device. (returns just the account name)"""
 def getLAPSAccount(url, dataForHeader, computerID):
@@ -203,9 +195,12 @@ def getLAPSAccount(url, dataForHeader, computerID):
 			logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Account collection: {response}")
 			content = response.json()
 			logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} {content}")
-			lapsAccount = content['results'][0]['username']
-			logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Account Found: {lapsAccount}")
-			return lapsAccount
+			try:
+				lapsAccount = content['results'][0]['username']
+				logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Account Found: {lapsAccount}")
+				return lapsAccount
+			except IndexError:
+				return "This computer does not appear to have a LAPS enabled account."
 		else:
 			logs.write(f"\n{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} Something went wrong. It may be that the computerID or local admin account supplied were unrecognized by the server, or that simply your Jamf Pro does not support this endpoint")
 			return "Something went wrong, please ensure your Jamf Pro version is greater than 10.45."

@@ -6,7 +6,7 @@ This tool has been built as a Python learning project, it has no guarantees of f
 This is my list of known issues and QoL improvements that I am considering implementing/fixing.
 
 Known issues:
-* Does not display anything when valid comp ID inputted but no PW to be found.
+* ~~Does not display anything when valid comp ID inputted but no PW to be found.~~ *Resolved.*
 * No logic for expired token (hopefully shows in logs?). Should renew if receiving 401 and then throw error if unsuccessful
 * pasting errors, specifically white space will break the URL without an error or correction
 * The main page isn't centered in the window.
