@@ -3,6 +3,8 @@
 
 This tool has been built as a Python learning project, it has no guarantees of functionality or otherwise. It was also meant to be used as a teaching tool, it could probably be much more efficient but I was going for readability, not perfection, as will be obvious. Feel free to reach out with suggestions and feedback.
 
+If you wish to utilize this tool, by all means. But since I am some no-name rando on the internet, downloading a suspicious zip file might not be advised. I have inlcuded the `setup.py` file in here that can be used with the py2app module to build a .app for this tool.
+
 This is my list of known issues and QoL improvements that I am considering implementing/fixing.
 
 Known issues:
